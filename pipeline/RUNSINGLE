@@ -16,7 +16,7 @@ pipeline {
 
     environment {
         // Consider storing your token as a Jenkins secret, and reference it here.
-        GIT_CREDENTIALS = 'https://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:x-oauth-basic@github.com/hoangthanhtri/Automation---Cucumber-TestNG.git'
+        GIT_CREDENTIALS = ''
     }
 
     stages {
