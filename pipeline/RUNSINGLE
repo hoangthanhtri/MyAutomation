@@ -1,0 +1,92 @@
+// Define the cleanup function
+def cleanup() {
+    sh """
+        echo "Cleaning up workspace"
+        rm -rf target/
+    """
+}
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'BROWSER_TYPE', choices: ['chrome', 'firefox', 'edge'], description: 'Choose a browser for testing')
+        choice(name: 'Thread', choices: [1,2, 3,4,5], description: 'Choose number of thread for testing')
+    }
+
+    environment {
+        // Consider storing your token as a Jenkins secret, and reference it here.
+        GIT_CREDENTIALS = 'https://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:x-oauth-basic@github.com/hoangthanhtri/Automation---Cucumber-TestNG.git'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                     browser = params.BROWSER_TYPE
+                     thread = params.Thread
+                     git branch: 'main', url: "${env.GIT_CREDENTIALS}"
+                }
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                script {
+                    sh """mvn clean compile test \
+                     -Drp.launch='Smoke_Test_${browser}' \
+                     -Ddataproviderthreadcount=${thread} \
+                     -DbrowserType=${browser} \
+                     -Dmaven.test.failure.ignore=true \
+                     -Dcucumber.filter.tags='@SmokeTest and (not @ignore)'
+                     """
+                }
+            }
+            post {
+                always {
+                    cleanup()
+                }
+            }
+        }
+
+
+        stage('Acceptance Test') {
+            steps {
+                script {
+                    sh """mvn clean compile test \
+                     -Drp.launch='Acceptance_Test_${browser}' \
+                     -Ddataproviderthreadcount=${thread} \
+                     -DbrowserType=${browser} \
+                     -Dmaven.test.failure.ignore=true \
+                     -Dcucumber.filter.tags='@AcceptanceTest and (not @ignore)'
+                     """
+                }
+            }
+            post {
+                always {
+                    cleanup()
+                }
+            }
+        }
+
+
+        stage('Functional Test') {
+            steps {
+                script {
+                    sh """mvn clean compile test \
+                     -Drp.launch='Functional_Test_${browser}' \
+                     -Ddataproviderthreadcount=${thread} \
+                     -DbrowserType=${browser} \
+                     -Dmaven.test.failure.ignore=true \
+                     -Dcucumber.filter.tags='@FunctionalTest and (not @ignore)'
+                     """
+                }
+            }
+            post {
+                always {
+                    cleanup()
+                }
+            }
+        }
+    }
+}

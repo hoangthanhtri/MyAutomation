@@ -1,0 +1,46 @@
+import jenkins.model.Jenkins
+
+// declare tags and nodeLabels array and number of usage node and browserType
+def tags = []
+def browserType = ''
+def launchName = ''
+
+    
+  pipeline {
+    agent none
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    // get all tags from jenkins parameter
+                    tags = params.TAGS.split(',')
+                    // get browser type
+                    browserType = params.BROWSER_TYPE
+                    // get launch name
+                    launchName = params.LAUNCH_NAME
+                }
+            }
+        }
+
+        stage('Test') {
+
+            steps {
+                script {
+                    def test = [:]
+
+                        test["${tag}"] = {
+                            node(agent) {
+                                git branch: 'main', url: 'https://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:x-oauth-basic@github.com/hoangthanhtri/Automation---Cucumber-TestNG.git'
+                                sh "mvn clean compile test -rp.launch=${launchName} -DbrowserType=${browserType} -Dmaven.test.failure.ignore=true -Dcucumber.filter.tags='${tag} and (not @ignore)'"
+                            }
+                        }
+
+                    }
+                parallel test
+              }
+          }
+        }
+
+
+    }
+  }
